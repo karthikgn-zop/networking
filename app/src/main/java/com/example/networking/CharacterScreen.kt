@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,7 +17,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -30,7 +33,7 @@ import com.example.networking.model.Character
 private fun CharacterCardPreview() {
     MaterialTheme {
         CharacterCard(
-            character = com.example.networking.model.Character(
+            character = Character(
                 id = 1,
                 name = "Rick Sanchez",
                 status = "Alive",
@@ -52,6 +55,16 @@ private fun CharacterCardPreview() {
 @Composable
 fun CharacterScreen(viewModel: CharacterViewModel = viewModel()) {
     val characters by viewModel.characters
+    val listState = rememberLazyListState()
+    LaunchedEffect(listState) {
+        snapshotFlow {
+            listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index
+        }.collect { index ->
+            if (index == characters.lastIndex) {
+                viewModel.fetchCharacters()
+            }
+        }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -62,6 +75,7 @@ fun CharacterScreen(viewModel: CharacterViewModel = viewModel()) {
         }
     ) { padding ->
         LazyColumn(
+            state = listState,
             contentPadding = padding,
             modifier = Modifier.fillMaxSize()
         ) {
@@ -111,9 +125,15 @@ fun CharacterCard(character: Character) {
             Text(
                 text = "Gender: ${character.gender}"
             )
-            Text(text = "Origin: ${character.origin.name}")
-            Text(text = "Episodes: ${character.episode.size}")
-            Text(text = "Location: ${character.location.name}")
+            Text(
+                text = "Origin: ${character.origin.name}"
+            )
+            Text(
+                text = "Episodes: ${character.episode.size}"
+            )
+            Text(
+                text = "Location: ${character.location.name}"
+            )
         }
     }
 }
